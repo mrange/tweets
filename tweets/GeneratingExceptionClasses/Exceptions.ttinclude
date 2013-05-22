@@ -1,0 +1,110 @@
+﻿<#
+// ----------------------------------------------------------------------------------------------
+// Copyright (c) Mårten Rånge.
+// ----------------------------------------------------------------------------------------------
+// This source code is subject to terms and conditions of the Microsoft Public License. A 
+// copy of the license can be found in the License.html file at the root of this distribution. 
+// If you cannot locate the  Microsoft Public License, please send an email to 
+// dlr@microsoft.com. By using this source code in any fashion, you are agreeing to be bound 
+//  by the terms of the Microsoft Public License.
+// ----------------------------------------------------------------------------------------------
+// You must not remove this notice, or any other, from this software.
+// ----------------------------------------------------------------------------------------------
+#>
+
+// ReSharper disable InvocationIsSkipped
+// ReSharper disable PartialMethodWithSinglePart
+// ReSharper disable PartialTypeWithSinglePart
+
+namespace <#=Namespace#>
+{
+    using System;
+    using System.Runtime.Serialization;
+    using System.Security.Permissions;
+
+ 
+<#
+    foreach (var excDef in Model)
+    {
+#>
+
+    /// <summary>
+    /// Represents <#=excDef.Name#> errors that occur during application execution.
+     /// </summary>
+    [Serializable]
+    <#=excDef.IsPublic ? "public " : ""#>partial class <#=excDef.Name#>Exception : <#=excDef.Inherits#>Exception
+    {
+        partial void Construct_<#=excDef.Name#>Exception();
+        partial void Serialize_<#=excDef.Name#>Exception(SerializationInfo info, StreamingContext context);
+        partial void Unserialize_<#=excDef.Name#>Exception(SerializationInfo info);
+
+        public <#=excDef.Name#>Exception()
+        {
+            Construct_<#=excDef.Name#>Exception();
+        }
+ 
+        public <#=excDef.Name#>Exception(string message)
+            : base(message)
+        {
+            Construct_<#=excDef.Name#>Exception();
+        }
+ 
+        public <#=excDef.Name#>Exception(string message, Exception inner)
+            : base(message, inner)
+        {
+            Construct_<#=excDef.Name#>Exception();
+        }
+ 
+        protected <#=excDef.Name#>Exception(SerializationInfo info, StreamingContext context)
+            : base(info, context)
+        {
+            Unserialize_<#=excDef.Name#>Exception(info);
+            Construct_<#=excDef.Name#>Exception();
+        }
+ 
+        [SecurityPermission(SecurityAction.Demand, SerializationFormatter = true)]
+        public override void GetObjectData(SerializationInfo info, StreamingContext context)
+        {
+            if (info == null)
+            {
+                throw new ArgumentNullException("info");
+            }
+
+            Serialize_<#=excDef.Name#>Exception(info, context);
+
+            base.GetObjectData(info, context);
+        }
+ 
+    }
+
+<#
+    }
+#>
+}
+
+<#+
+    string Namespace  = "ReplaceThisNamespaceName"  ;
+    
+    ExceptionDefinition[] Model = new ExceptionDefinition[0];
+
+    sealed class ExceptionDefinition 
+    {
+        public readonly string Name             ;
+        public readonly bool   IsPublic         ;
+        public readonly string Inherits         ;
+
+        public ExceptionDefinition (string name, bool isPublic, string inherits)
+        {
+            Name        = name ?? "<NoName>"            ;
+            IsPublic    = isPublic                      ;
+            Inherits    = inherits ?? ""                ;
+        }
+    }
+
+    static ExceptionDefinition E (string name, bool isPublic = true, string inherits = null)
+    {
+        return new ExceptionDefinition (name, isPublic, inherits);
+    }
+
+
+#>
