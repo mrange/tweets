@@ -32,6 +32,7 @@ namespace StaticReflection
     class Program
     {
       
+        //                                  Expression<> <-- This is where the magic happens
         static MethodInfo GetMethodInfo<T> (Expression<Action<T>> expression)
         {
             return ((MethodCallExpression)expression.Body).Method;
