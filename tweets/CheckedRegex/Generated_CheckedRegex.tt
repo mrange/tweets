@@ -1,0 +1,26 @@
+﻿// ----------------------------------------------------------------------------------------------
+// Copyright (c) Mårten Rånge.
+// ----------------------------------------------------------------------------------------------
+// This source code is subject to terms and conditions of the Microsoft Public License. A 
+// copy of the license can be found in the License.html file at the root of this distribution. 
+// If you cannot locate the  Microsoft Public License, please send an email to 
+// dlr@microsoft.com. By using this source code in any fashion, you are agreeing to be bound 
+//  by the terms of the Microsoft Public License.
+// ----------------------------------------------------------------------------------------------
+// You must not remove this notice, or any other, from this software.
+// ----------------------------------------------------------------------------------------------
+
+<#
+    Namespace = "CheckedRegex";
+
+    Model = new []
+    {
+        R ("IniVariable"        , @"^(?<Variable>\S*)\s*\=\s*(?<Value>.*)$"                                                                                                             ),
+        R ("Guid"               , @"\{(?<First>[0-9|a-f|A-F]{8})\-(?<Second>[0-9|a-f|A-F]{4})\-(?<Third>[0-9|a-f|A-F]{4})\-(?<Fourth>[0-9|a-f|A-F]{4})\-(?<Fifth>[0-9|a-f|A-F]{12})\}"  ),
+        R ("Date"               , @"(?<Year>[0-9]{4})\-(?<Month>[0-9]{2})\-(?<Day>[0-9]{2})"                                                                                            ),
+        R ("DateTime"           , @"(?<Year>[0-9]{4})\-(?<Month>[0-9]{2})\-(?<Day>[0-9]{2})(T| )(?<Hour>[0-9]{2})\:(?<Minute>[0-9]{2})\:(?<Second>[0-9]{2})"                            ),
+    };
+#>
+
+
+<#@ include file="$(ProjectDir)\CheckedRegex.ttinclude"   #>

@@ -1,0 +1,223 @@
+﻿<#
+// ----------------------------------------------------------------------------------------------
+// Copyright (c) Mårten Rånge.
+// ----------------------------------------------------------------------------------------------
+// This source code is subject to terms and conditions of the Microsoft Public License. A 
+// copy of the license can be found in the License.html file at the root of this distribution. 
+// If you cannot locate the  Microsoft Public License, please send an email to 
+// dlr@microsoft.com. By using this source code in any fashion, you are agreeing to be bound 
+//  by the terms of the Microsoft Public License.
+// ----------------------------------------------------------------------------------------------
+// You must not remove this notice, or any other, from this software.
+// ----------------------------------------------------------------------------------------------
+#>
+
+<#@ assembly    name        ="System.Core"                      #>
+<#@ import      namespace   ="System.Collections.Generic"       #>
+<#@ import      namespace   ="System.Linq"                      #>
+<#@ import      namespace   ="System.Text.RegularExpressions"   #>
+
+// ReSharper disable InconsistentNaming
+// ReSharper disable PartialTypeWithSinglePart
+
+namespace <#=Namespace#>
+{
+
+    using System;
+    using System.Collections.Generic;
+    using System.Text;
+    using System.Text.RegularExpressions;
+
+<#
+    foreach (var cr in Model)
+    {
+        try
+        {
+            var regex = new Regex (cr.RegexText, RegexOptions.ExplicitCapture);
+
+            var names = regex.GetGroupNames ();
+            var indexes = regex.GetGroupNumbers ();
+
+            var groups = Enumerable
+                .Range (0, names.Length)
+                .Select (i => Tuple.Create (names[i], indexes[i]))
+                .Where (t => {int x; return !int.TryParse (t.Item1, out x);})   // Remove implicit captures
+                .ToArray ()
+                ;
+
+
+#>    
+    sealed partial class <#=cr.ResultType#>
+    {
+        readonly Match m_match;
+        public <#=cr.ResultType#> (Match match)
+        {
+            m_match = match;
+        }
+
+        public bool GetSuccess ()
+        {
+            return m_match.Success;
+        }
+<#
+    foreach (var gr in groups)
+    {
+#>
+
+        public Group Group_<#=gr.Item1#>
+        {
+            get
+            {
+                return m_match.Groups[<#=gr.Item2#>];
+            }
+        }
+
+        public string <#=gr.Item1#>
+        {
+            get
+            {
+                var gr = Group_<#=gr.Item1#>;
+                return gr.Success ? gr.Value : "";
+            }
+        }
+
+<#
+    }
+#>
+
+#if DEBUG
+        public override string ToString ()
+        {
+            var sb = new StringBuilder ();
+
+            sb.Append ("<#=cr.Name#>");
+
+<#
+    var maxWidth = groups.Length > 0 ? groups.Max (gr => gr.Item1.Length) : 0;
+
+    foreach (var gr in groups)
+    {
+#>
+            sb.AppendLine ();
+            sb.Append ("  ");
+            sb.Append ("<#=gr.Item1 + new string (' ', maxWidth - gr.Item1.Length)#>");
+            sb.Append (" = ");
+            sb.Append (<#=gr.Item1#>);
+<#
+    }
+#>
+
+            return sb.ToString ();
+        }
+#endif
+
+    }
+
+    static partial class CheckedRegex
+    {
+        public static readonly Regex <#=cr.MemberName#> = new Regex (
+            @"<#=cr.RegexText#>",
+            <#=cr.RegexOptions#>
+            );
+
+        public static <#=cr.ResultType#> Match_<#=cr.Name#> (this string s)
+        {
+            return Match_<#=cr.Name#> (s, 0, (s ?? "").Length);
+        }
+
+        public static <#=cr.ResultType#> Match_<#=cr.Name#> (this string s, int startAt)
+        {
+            return Match_<#=cr.Name#> (s, startAt, Math.Max ((s ?? "").Length - startAt, 0));
+        }
+
+        public static <#=cr.ResultType#> Match_<#=cr.Name#> (this string s, int beginning, int length)
+        {
+            var match = <#=cr.MemberName#>.Match (s ?? "", beginning, length);
+
+            return new <#=cr.ResultType#> (match);
+        }
+
+        public static IEnumerable<<#=cr.ResultType#>> Matches_<#=cr.Name#> (this string s)
+        {
+            return Matches_<#=cr.Name#> (s, 0);
+        }
+
+        public static IEnumerable<<#=cr.ResultType#>> Matches_<#=cr.Name#> (this string s, int startAt)
+        {
+            var matches = <#=cr.MemberName#>.Matches (s ?? "", startAt);
+
+            var count = matches.Count;
+
+            for (var iter = 0; iter < count; ++iter)
+            {
+                var match = matches[iter];
+                yield return new <#=cr.ResultType#> (match);
+            }
+        }
+
+        public static bool IsMatch_<#=cr.Name#> (this string s)
+        {
+            return IsMatch_<#=cr.Name#> (s, 0);
+        }
+
+        public static bool IsMatch_<#=cr.Name#> (this string s, int startAt)
+        {
+            return <#=cr.MemberName#>.IsMatch (s ?? "", startAt);
+        }
+
+    }
+<#
+        }
+        catch (Exception exc)
+        {
+#>
+@@@ FAILED_TO_BUILD_CHECKED_REGEX @@@ // <#=cr.Name#>, <#=cr.RegexOptions#>, <#=exc.Message#>
+<#
+        }
+    }
+#>
+}
+
+
+<#+
+    string Namespace = "CheckedRegex";
+
+    RegexDefinition[] Model = new RegexDefinition[0];
+
+    class RegexDefinition 
+    {
+        public readonly string  Name            ;
+        public readonly string  RegexText       ;
+        public readonly string  RegexOptions    ;
+
+        public RegexDefinition (string name, string regexText, string regexOptions)
+        {
+            Name        = name          ?? "<NoName>"   ;
+            RegexText   = regexText     ?? ".*"         ;
+            RegexOptions= regexOptions  ?? "RegexOptions.Compiled | RegexOptions.CultureInvariant";
+
+            if (RegexOptions.Length > 0)
+            {
+                RegexOptions += " | ";
+            }
+
+            RegexOptions += "RegexOptions.ExplicitCapture";
+        }
+
+        public string ResultType
+        {
+            get {return "CheckedRegex_" + Name; }
+        }
+
+        public string MemberName
+        {
+            get {return "Regex_" + Name; }
+        }
+    }
+
+    static RegexDefinition R (string name,  string regexText, string regexOptions = null)
+    {
+        return new RegexDefinition (name, regexText, regexOptions);
+    }
+
+#>

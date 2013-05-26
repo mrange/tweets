@@ -57,8 +57,11 @@ In addition the example demonstrate how to use partial to extend generated
 exceptions with custom properties.
 
 Have fun @marten_range (twitter)
+
+Press any key to continue
 ");
 
+            Console.ReadKey ();
             // Sample on how to use the generated exception.
             // Just like you normally would
             //throw new BasicHttpAuthorizationRequiredException
