@@ -171,7 +171,7 @@ namespace <#=Namespace#>
         catch (Exception exc)
         {
 #>
-@@@ FAILED_TO_BUILD_CHECKED_REGEX @@@ // <#=cr.Name#>, <#=cr.RegexOptions#>, <#=exc.Message#>
+@@@ FAILED_TO_BUILD_CHECKED_REGEX @@@ // <#=cr.Name#>, <#=cr.RegexText#>, <#=exc.Message#>
 <#
         }
     }

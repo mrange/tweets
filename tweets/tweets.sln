@@ -7,6 +7,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "StaticReflection", "StaticR
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CheckedRegex", "CheckedRegex\CheckedRegex.csproj", "{343A6605-C6C0-43D3-93DF-2A2C58656048}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CheckedFormatStrings", "CheckedFormatStrings\CheckedFormatStrings.csproj", "{43ED5831-EC5D-414D-A72D-3EB4417B848C}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -25,6 +27,10 @@ Global
 		{343A6605-C6C0-43D3-93DF-2A2C58656048}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{343A6605-C6C0-43D3-93DF-2A2C58656048}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{343A6605-C6C0-43D3-93DF-2A2C58656048}.Release|Any CPU.Build.0 = Release|Any CPU
+		{43ED5831-EC5D-414D-A72D-3EB4417B848C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{43ED5831-EC5D-414D-A72D-3EB4417B848C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{43ED5831-EC5D-414D-A72D-3EB4417B848C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{43ED5831-EC5D-414D-A72D-3EB4417B848C}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
