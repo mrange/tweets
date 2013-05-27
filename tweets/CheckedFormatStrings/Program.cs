@@ -18,6 +18,7 @@ namespace CheckedFormatStrings
     {
         static void Main(string[] args)
         {
+            // Checked formatting strings
             Console.WriteLine (Format.OneValue (1));
             Console.WriteLine (Format.TwoValues (1,2));
             Console.WriteLine (Format.TrickyCase (1));
