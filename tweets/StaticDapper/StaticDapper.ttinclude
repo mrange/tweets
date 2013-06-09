@@ -1,0 +1,264 @@
+﻿<#
+// ----------------------------------------------------------------------------------------------
+// Copyright (c) Mårten Rånge.
+// ----------------------------------------------------------------------------------------------
+// This source code is subject to terms and conditions of the Microsoft Public License. A 
+// copy of the license can be found in the License.html file at the root of this distribution. 
+// If you cannot locate the  Microsoft Public License, please send an email to 
+// dlr@microsoft.com. By using this source code in any fashion, you are agreeing to be bound 
+//  by the terms of the Microsoft Public License.
+// ----------------------------------------------------------------------------------------------
+// You must not remove this notice, or any other, from this software.
+// ----------------------------------------------------------------------------------------------
+#>
+
+<#@ include file="$(ProjectDir)\Header.ttinclude"   #>
+
+// ReSharper disable InconsistentNaming
+
+namespace <#=Namespace#>
+{
+    using System;
+    using System.Collections.Generic;
+    using System.Data;
+
+<#
+    foreach (var classDef in Model)
+    {
+        var propIdx = -1;
+        var maxTypeLength = classDef.Max (pd => (int?)pd.ClrType.Length) ?? 0;
+        var maxNameLength = classDef.Max (pd => (int?)pd.Name.Length) ?? 0;
+#>
+
+    partial class <#=classDef.Name#>
+    {
+<#
+    propIdx = -1;
+    foreach (var propDef in classDef)
+    {
+        ++propIdx;
+#>
+        public <#=LeftJustify (propDef.ClrType, maxTypeLength)#> <#=LeftJustify (propDef.Name, maxNameLength)#> { get; set; }
+<#
+    }
+#>
+    }
+    
+    static partial class SqlExtensions
+    {
+
+        /// <summary>
+        /// Reads <#=classDef.Name#> instances from a IDataReader. 
+        /// This method requires the order of fields to match the order of the columns
+        /// </summary>
+        /// <param name="dataReader">A IDataReader instance</param>
+        /// <returns>A sequence of <#=classDef.Name#> instances</returns>
+        public static IEnumerable<<#=classDef.Name#>> ReadFixedPos_<#=classDef.Name#> (this IDataReader dataReader)
+        {
+            if (dataReader == null)
+            {
+                yield break;
+            }
+
+            while (dataReader.Read ())
+            {
+                yield return new <#=classDef.Name#>
+                {
+<#
+    propIdx = -1;
+    foreach (var propDef in classDef)
+    {
+        ++propIdx;
+#>
+                    <#=LeftJustify (propDef.Name, maxNameLength)#> = dataReader.IsDBNull (<#=propIdx#>) ? <#=LeftJustify (propDef.DefaultValue, DefaultWidth)#> : dataReader.<#=LeftJustify (propDef.Getter, DefaultWidth)#> (<#=propIdx#>),
+<#
+    }
+#>
+                };
+            }
+        }
+
+        /// <summary>
+        /// Reads Customer instances from a IDataReader. 
+        /// This method maps the fields with the columns by name.
+        /// Additional and missing columns are ignored
+        /// </summary>
+        /// <param name="dataReader">A IDataReader instance</param>
+        /// <returns>A sequence of Customer instances</returns>
+        public static IEnumerable<<#=classDef.Name#>> Read_<#=classDef.Name#> (this IDataReader dataReader)
+        {
+            if (dataReader == null)
+            {
+                yield break;
+            }
+
+<#
+    propIdx = -1;
+    foreach (var propDef in classDef)
+    {
+        ++propIdx;
+#>
+            var remapped_<#=propDef.Name#> = -1;
+<#
+    }
+#>
+
+            var fieldCount = dataReader.FieldCount;
+            for (var iter = 0; iter < fieldCount; ++iter)
+            {
+                switch (dataReader.GetName (iter) ?? "")
+                {
+<#
+    propIdx = -1;
+    foreach (var propDef in classDef)
+    {
+        ++propIdx;
+#>
+                case @"<#=propDef.ColumnName#>":
+                    remapped_<#=propDef.Name#> = iter;
+                    break;
+<#
+    }
+#>
+                }
+            }
+
+            while (dataReader.Read ())
+            {
+                var result = new <#=classDef.Name#> ();
+
+<#
+    propIdx = -1;
+    foreach (var propDef in classDef)
+    {
+        ++propIdx;
+#>
+                if (remapped_<#=propDef.Name#> > -1)
+                {
+                    result.<#=LeftJustify (propDef.Name, maxNameLength)#> = dataReader.IsDBNull (remapped_<#=propDef.Name#>) ? <#=propDef.DefaultValue#> : dataReader.<#=propDef.Getter#> (remapped_<#=propDef.Name#>);
+                }
+
+<#
+    }
+#>
+
+                yield return result;
+            }
+        }
+
+    }
+
+
+<#
+    }
+#>
+
+}
+
+<#+
+
+    const int           DefaultWidth= 24                    ;
+
+    string              Namespace   = "StaticDapper"        ;
+
+
+    ClassDefinition[]   Model       = new ClassDefinition[0];
+
+    class ClassDefinition : BaseContainer<Root, PropertyDefinition>
+    {
+        public readonly string Name         ;
+
+        public ClassDefinition (string name)
+        {
+            Name        = name ?? S_NoName  ;
+        }
+    }
+
+    enum PropertyType
+    {
+        Unknown             ,
+        Int64               ,
+        Decimal             ,
+        DateTime            ,
+        String              ,
+    }
+
+    class PropertyDefinition : BaseEntity<ClassDefinition>
+    {
+        public readonly PropertyType    Type        ;
+        public readonly string          Name        ;
+        public readonly string          ColumnName  ;
+        public readonly bool            IsNullable  ;
+
+        public PropertyDefinition (PropertyType type, string name, string columnName, bool isNullable)
+        {
+            Type        = type                      ;
+            Name        = name          ?? S_NoName ;
+            ColumnName  = columnName    ?? Name     ;
+            IsNullable  = isNullable                ;
+        }
+
+        public string ClrType 
+        {
+            get
+            {
+                switch (Type)
+                {
+                    case PropertyType.String:
+                        return "String";
+                    default:
+                        return Type.ToString () + (IsNullable ? "?" : "");
+                }
+            }
+        }
+
+        public string Getter 
+        {
+            get
+            {
+                return "Get" + Type.ToString ();
+            }
+        }
+
+        public string DefaultValue 
+        {
+            get
+            {
+                switch (Type)
+                {
+                    case PropertyType.String:
+                        return IsNullable ? "null" : @"""""";
+                    default:
+                        return "default (" + ClrType + ")";
+                }
+            }
+        }
+
+    }
+
+    static PropertyDefinition P (PropertyType type, string name, string columnName = null, bool isNullable = false)
+    {
+        return new PropertyDefinition (type, name, columnName, isNullable);
+    }
+
+    static PropertyDefinition Int64 (string name, string columnName = null, bool isNullable = false)
+    {
+        return P (PropertyType.Int64, name, columnName, isNullable);
+    }
+
+    static PropertyDefinition String (string name, string columnName = null, bool isNullable = false)
+    {
+        return P (PropertyType.String, name, columnName, isNullable);
+    }
+
+    static PropertyDefinition DateTime (string name, string columnName = null, bool isNullable = false)
+    {
+        return P (PropertyType.DateTime, name, columnName, isNullable);
+    }
+
+    static PropertyDefinition Decimal (string name, string columnName = null, bool isNullable = false)
+    {
+        return P (PropertyType.Decimal, name, columnName, isNullable);
+    }
+#>
+
