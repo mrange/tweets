@@ -54,6 +54,7 @@ Model = new []
 From this all the tedious details are generated.
 
 The benefits of this over Dapper is:
+
 1. No external dependencies
 2. Reduced runtime complexity (take a look at the Dapper code and you'll understand)
 3. Improved debuggability
